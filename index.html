@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f6b2f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<style>html{color-scheme:light dark}body{margin:0}</style>
+<title>Seed Drill Calibration</title>
+<style>
+/* Layout: single-column field calculator. Tabs on top, inputs, then a pinned result panel. */
+:root{
+  --bg:#f3f5ef; --surface:#ffffff; --fg:#1d2a1b; --muted:#5d6b59; --line:#d6dccf;
+  --accent:#2f6b2f; --accent-fg:#ffffff; --result:#e6efd9; --result-fg:#183a18;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121711; --surface:#1b231a; --fg:#e8eee4; --muted:#9aa896; --line:#2c372b;
+  --accent:#8fd18a; --accent-fg:#0f1a0e; --result:#233420; --result-fg:#d4f0cf; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121711; --surface:#1b231a; --fg:#e8eee4; --muted:#9aa896; --line:#2c372b;
+  --accent:#8fd18a; --accent-fg:#0f1a0e; --result:#233420; --result-fg:#d4f0cf; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.4 var(--font-body);
+  padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font:700 22px/1.2 var(--font-head);margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:4px 0 0}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--line);padding:4px;border-radius:10px}
+.tabs button{border:0;background:transparent;color:var(--muted);font:600 14px var(--font-body);padding:10px 8px;border-radius:7px;min-height:44px}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--fg)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.panel{display:flex;flex-direction:column;gap:16px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px 16px}
+.group h2{font:600 12px var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+.field{display:grid;grid-template-columns:1fr 104px;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.field:first-of-type{border-top:0}
+.field label{min-width:0;font-size:15px}
+.field input{width:100%;min-height:44px;font:500 17px var(--font-body);text-align:right;color:var(--fg);background:var(--bg);
+  border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-variant-numeric:tabular-nums}
+.calc{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line);color:var(--muted);font-size:15px}
+.calc b{color:var(--fg);font-variant-numeric:tabular-nums;font-weight:600}
+.results{background:var(--result);color:var(--result-fg);border-radius:12px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.results div{min-width:0}
+.results .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+.results .v{font:700 34px/1.1 var(--font-head);font-variant-numeric:tabular-nums;margin-top:4px}
+.results .v small{font:500 14px var(--font-body);opacity:.8;margin-left:2px}
+.results .note{grid-column:1/-1;font-size:13px;opacity:.85;margin:0}
+button.reset{align-self:flex-start;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;min-height:44px;padding:0 16px;font:600 14px var(--font-body)}
+</style>
+
+</head><body>
+<main>
+  <header>
+    <h1>Seed Drill Calibration</h1>
+    <p class="sub">Grams of seed and fertilizer to expect from each tube.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-a" aria-selected="true" aria-controls="panel-a">Ground wheel</button>
+    <button role="tab" id="tab-b" aria-selected="false" aria-controls="panel-b">Known distance</button>
+  </div>
+
+  <section class="panel" id="panel-a" role="tabpanel" aria-labelledby="tab-a">
+    <div class="group">
+      <h2>Machine</h2>
+      <div class="field"><label for="a-dia">Diameter of ground wheel, m</label><input id="a-dia" data-k="a-dia" inputmode="decimal" value="0.6"></div>
+      <div class="field"><label for="a-rev">Revolutions of ground wheel</label><input id="a-rev" data-k="a-rev" inputmode="decimal" value="20"></div>
+      <div class="field"><label for="a-sp">Row to row spacing, m</label><input id="a-sp" data-k="a-sp" inputmode="decimal" value="0.225"></div>
+      <div class="field"><label for="a-rows">Number of rows</label><input id="a-rows" data-k="a-rows" inputmode="decimal" value="10"></div>
+      <div class="field"><label for="a-slip">Slip in ground wheel, %</label><input id="a-slip" data-k="a-slip" inputmode="decimal" value="10"></div>
+    </div>
+    <div class="group">
+      <h2>Rates</h2>
+      <div class="field"><label for="a-seed">Seed rate, kg/acre</label><input id="a-seed" data-k="a-seed" inputmode="decimal" value="45"></div>
+      <div class="field"><label for="a-fert">Fertilizer rate, kg/acre</label><input id="a-fert" data-k="a-fert" inputmode="decimal" value="60"></div>
+    </div>
+    <div class="group">
+      <h2>Worked out</h2>
+      <div class="calc"><span>Distance covered, m</span><b id="a-dist">–</b></div>
+      <div class="calc"><span>Width of machine, m</span><b id="a-width">–</b></div>
+    </div>
+    <div class="results" aria-live="polite">
+      <div><div class="k">Seed per tube</div><div class="v"><span id="a-rs">–</span><small>g</small></div></div>
+      <div><div class="k">Fertilizer per tube</div><div class="v"><span id="a-rf">–</span><small>g</small></div></div>
+      <p class="note">Includes the slip allowance.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b" hidden>
+    <div class="group">
+      <h2>Machine</h2>
+      <div class="field"><label for="b-dist">Distance covered, m</label><input id="b-dist" data-k="b-dist" inputmode="decimal" value="37.68"></div>
+      <div class="field"><label for="b-sp">Row to row spacing, m</label><input id="b-sp" data-k="b-sp" inputmode="decimal" value="0.225"></div>
+      <div class="field"><label for="b-rows">Number of rows</label><input id="b-rows" data-k="b-rows" inputmode="decimal" value="11"></div>
+    </div>
+    <div class="group">
+      <h2>Rates</h2>
+      <div class="field"><label for="b-seed">Seed rate, kg/acre</label><input id="b-seed" data-k="b-seed" inputmode="decimal" value="45"></div>
+      <div class="field"><label for="b-fert">Fertilizer rate, kg/acre</label><input id="b-fert" data-k="b-fert" inputmode="decimal" value="60"></div>
+    </div>
+    <div class="group">
+      <h2>Worked out</h2>
+      <div class="calc"><span>Width of machine, m</span><b id="b-width">–</b></div>
+    </div>
+    <div class="results" aria-live="polite">
+      <div><div class="k">Seed per tube</div><div class="v"><span id="b-rs">–</span><small>g</small></div></div>
+      <div><div class="k">Fertilizer per tube</div><div class="v"><span id="b-rf">–</span><small>g</small></div></div>
+      <p class="note">No slip allowance on this tab.</p>
+    </div>
+  </section>
+
+  <button class="reset" id="reset" type="button">Reset to example values</button>
+</main>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var inputs=[].slice.call(document.querySelectorAll('input[data-k]'));
+  var defaults={};inputs.forEach(function(i){defaults[i.id]=i.value});
+  var KEY='seed-drill-v1';
+  function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||'{}');inputs.forEach(function(i){if(s[i.id]!=null)i.value=s[i.id]})}catch(e){}}
+  function save(){try{var s={};inputs.forEach(function(i){s[i.id]=i.value});localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+  function n(id){var v=parseFloat(String($(id).value).replace(',','.'));return isFinite(v)?v:NaN}
+  // Spreadsheet ROUND(x,3)
+  function r3(x){return Math.round(x*1000)/1000}
+  function show(id,v,d){$(id).textContent=isFinite(v)?v.toFixed(d):'–'}
+  function calc(){
+    // Tab 1 (cells B5, B9, B11, B12)
+    var dist=3.14*n('a-dia')*n('a-rev');
+    var width=n('a-rows')*n('a-sp');
+    var f=(1+n('a-slip')/100)*1000/n('a-rows');
+    show('a-dist',dist,3);show('a-width',width,3);
+    show('a-rs',r3(n('a-seed')/4000*dist*width)*f,1);
+    show('a-rf',r3(n('a-fert')/4000*dist*width)*f,1);
+    // Tab 2 (cells B20, B23, B24), shared among all rows
+    var w2=n('b-sp')*n('b-rows');
+    show('b-width',w2,3);
+    show('b-rs',r3(n('b-seed')/4000*n('b-dist')*w2)*1000/n('b-rows'),1);
+    show('b-rf',r3(n('b-fert')/4000*n('b-dist')*w2)*1000/n('b-rows'),1);
+  }
+  inputs.forEach(function(i){i.addEventListener('input',function(){calc();save()})});
+  $('reset').addEventListener('click',function(){inputs.forEach(function(i){i.value=defaults[i.id]});calc();save()});
+  function tab(which){
+    ['a','b'].forEach(function(t){
+      $('tab-'+t).setAttribute('aria-selected',String(t===which));
+      $('panel-'+t).hidden=(t!==which);
+    });
+    try{localStorage.setItem(KEY+'-tab',which)}catch(e){}
+  }
+  $('tab-a').addEventListener('click',function(){tab('a')});
+  $('tab-b').addEventListener('click',function(){tab('b')});
+  load();calc();
+  try{var t=localStorage.getItem(KEY+'-tab');if(t==='a'||t==='b')tab(t)}catch(e){}
+})();
+</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}</script>
+</body></html>
